@@ -1,0 +1,10 @@
+A lambda-calculus interpreter.
+
+The set of lambda expressions, Λ, can be defined inductively:
+    1.) If x is a variable, then x ∈  Λ
+    2.) If x is a variable and M ∈  Λ, then (λx.M) ∈  Λ
+    3.) If M, N ∈  Λ, then (M N) ∈  Λ
+
+<expression>  := <name> | <function> | <application> | "(" <expression> ")"
+<function>    := "sc_lambda"<name>"sc_separator"<expression>
+<application> := <expression> <expression>

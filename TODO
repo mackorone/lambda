@@ -1,0 +1,32 @@
+1.) Figure out how to handle syntax errors better. I should really print out
+    the line and pointer to character(s) that is(are) causing the error
+
+2.) Output the steps of reduction
+    (* Whether or not to output the reduction steps *)
+    (*val redStepPrompt = "    * ";*)
+    (*val showRedSteps = false;*)
+
+3.) Expanded lambda to allow for names ( I THINK I LIKE THIS BETTER )
+    OR (CAN'T DO BOTH)
+3.) Get the sugared lambda function form to work
+
+3.) Figure out how to stop infinite recursion
+
+4.) Eta reduction
+
+5.) Comments in the loadable files
+val sc_comment   = #"#"; (* TODO *)
+
+6.) Ensure that the REQ have associated REQ_VIOLATIONs
+
+7.) Refactor so that the index methods actually return 1 passed the last element
+
+Ensure that all documentation is uniform
+
+Write tests for all functions
+Display expected and actual values for unit tests
+
+Optimize and refactor the code - don't do things twice
+AKA thing about the way I'm getting indexes - is there a better way???
+
+Write optimized version in C
