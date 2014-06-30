@@ -407,7 +407,9 @@ and reduce(  []  ) = []
             else hd::reduce(tl)
         ;
     in
+        (print(hd^"\n");
         helper(String.explode(hd))
+        )
     end
 ;
 
