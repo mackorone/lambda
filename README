@@ -1,10 +1,79 @@
-A lambda-calculus interpreter.
+lambda
+======
 
-The set of lambda expressions, Λ, can be defined inductively:
-    1.) If x is a variable, then x ∈  Λ
-    2.) If x is a variable and M ∈  Λ, then (λx.M) ∈  Λ
-    3.) If M, N ∈  Λ, then (M N) ∈  Λ
+This is an untyped Lambda Calculus interpreter. It reduces lambda expressions.
 
-<expression>  := <name> | <function> | <application> | "(" <expression> ")"
-<function>    := "sc_lambda"<name>"sc_separator"<expression>
-<application> := <expression> <expression>
+
+Introduction
+============
+
+From Wikipedia:
+
+    Lambda calculus (also written as λ-calculus) is a formal system in
+    mathematical logic and computer science for expressing computation based
+    on function abstraction and application using variable binding and
+    substitution. First formulated by Alonzo Church to formalize the concept
+    of effective computability, lambda calculus found early successes in the
+    area of computability theory, such as a negative answer to Hilbert's
+    Entscheidungsproblem. Lambda calculus is a conceptually simple universal
+    model of computation (Turing showed in 1937 that Turing machines equalled
+    the lambda calculus in expressiveness). The name derives from the Greek
+    letter lambda (λ) used to denote binding a variable in a function.
+
+From "A Tutorial Introduction to the Lambda Calculus" by Ra ́l Rojas
+
+    The set of lambda expressions, Λ, can be defined inductively:
+        1.) If x is a variable, then x ∈  Λ
+        2.) If x is a variable and M ∈  Λ, then (λx.M) ∈  Λ
+        3.) If M, N ∈  Λ, then (M N) ∈  Λ
+
+
+Syntax
+======
+
+    The characters representing the
+
+    file names cannot have "("or ")" wihtin then
+
+TODO: Talk about all of the syntactic choices
+
+
+A valid variable is any character in the string
+    "abcdefghijklmnopqrstuvwxyz".
+
+    <expression>  := <name> | <function> | <application> | "(" <expression> ")"
+    <function>    := "sc_lambda"<name>"sc_separator"<expression>
+    <application> := <expression> <expression>
+
+
+Key features
+============
+
+    Lazy evalutation - Arguments are not evaluated until they are needed. This
+    ensures that lambda expressions like "Lx.a (Lx.(x x) Lx.(x x))" are able to
+    reduced as opposed to simply trying to reduce "(Lx.(x x) Lx.(x x))" forever.
+
+    Files - Lambda expressions can be encapsulated within files and subsequently
+    loaded into the interpreter by prefixing the file name with the "$"
+    character. This allows complicated functions to be built incrementally.
+
+    Tail recursion - All recursive functions have been deliberatly written to be
+    tail recursive, allowing ML to perform last-call optimization. TODO************************************
+
+
+"files"
+=======
+
+The subdirectory "files" contains a few useful definitions and structures. They
+are as follows:
+
+    T - 
+    F - 
+    
+    .
+    .
+    .
+
+
+How to run the interpreter
+==========================

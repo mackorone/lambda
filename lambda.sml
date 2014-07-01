@@ -166,11 +166,10 @@ fun indexOfLambdaEnd(s) =
                         let
                             val str = String.implode(hd::tl);
                             val i = indexOfClosingPar(str);
-                            val check = tokenize(String.substring(str, 1, i - 1));
                         in
-                            if (i = ~1) then ~1
-                            else if (check = []) then ~1
-                            else if (isIn(errorString, check)) then ~1
+                            if (i = ~1)
+                            (* Check to ensure the contents of the parenthetic expression are valid *)
+                            orelse (isIn(errorString, tokenize(String.substring(str, 1, i - 1)))) then ~1
                             else i + 3
                         end
                     else if (charIn(hd, variableChars)) then
@@ -198,10 +197,10 @@ fun indexOfLambdaEnd(s) =
  *)
 and tokenize(s) =
     let
-        fun helper(  []  , lst) = lst
+        fun helper([], lst) = if (lst = []) then [errorString] else lst
 
           | helper(hd::[], lst) =
-            if (charIn(hd, whitespaceChars)) then lst
+            if (charIn(hd, whitespaceChars)) then helper([], lst)
             else if (charIn(hd, variableChars)) then lst @ [Char.toString(hd)]
             else [errorString]
 
@@ -222,10 +221,9 @@ and tokenize(s) =
                         let
                             val expr = String.substring(str, 0, i + 1);
                             val rest = String.extract(str, i + 1, NONE);
-                            val check = tokenize(String.substring(expr, 1, i - 1));
                         in
-                            if (check = []) then [errorString]
-                            else if (isIn(errorString, check)) then [errorString]
+                            (* Check to ensure the contents of the parenthetic expression are valid *)
+                            if (isIn(errorString, tokenize(String.substring(expr, 1, i - 1)))) then [errorString]
                             else helper(String.explode(rest), lst @ [expr])
                         end
                 end
@@ -409,16 +407,11 @@ fun main() =
         else
             let
                 val input = Option.valOf(inputOption);
-                val result = reduce(tokenize(input));
             in (
-                (* If there is no result, don't print anything*)
-                if (result = []) then ()
-                else (
-                    print(resultPrompt);
-                    print(stringify(result)^"\n")
-                )
-            );
-            main()
-            end
+                (* If there is no non-whitespace input, don't print a result *)
+                if (trimWhitespace(input) = "") then ()
+                else print(resultPrompt^stringify(reduce(tokenize(input)))^"\n");
+                main()
+            ) end
     end
 );
