@@ -30,3 +30,6 @@ Optimize and refactor the code - don't do things twice
 AKA thing about the way I'm getting indexes - is there a better way???
 
 Write optimized version in C
+
+Get rid of unnecessary check
+Make sure all calls are tail recursive

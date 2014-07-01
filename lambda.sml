@@ -23,7 +23,6 @@
  *)
 
 (* Prompts*)
-val errorPrompt   = " Err: ";
 val inputPrompt   = "{L}-: ";
 val resultPrompt  = "    = ";
 
@@ -33,6 +32,9 @@ val sc_separator = #".";
 val sc_openPar   = #"(";
 val sc_closePar  = #")";
 val sc_load      = #"$";
+
+(* The output resulting from invalid input *)
+val errorString = "Error";
  
 (* A string containing all valid variable characters *)
 val variableChars = "abcdefghijklmnopqrstuvwxyz";
@@ -42,58 +44,6 @@ val whitespaceChars = " \t\n";
 
 (* Requirement violation exception *)
 exception REQ_VIOLATION;
-
-(*
- * Returns a list containing all of the error messages within the list of
- * strings 'lst'
- *
- * REQ: None
- *)
-(*TODO : Improve this *)
-fun getErrors(lst) =
-    let
-        fun helper(  []  , errs) = errs
-          | helper(hd::tl, errs) =
-            if (String.size(hd) >= String.size(errorPrompt)) andalso
-            (String.substring(hd, 0, String.size(errorPrompt)) = errorPrompt) then
-                helper(tl, errs @ [hd])
-            else helper(tl, errs)
-    in
-        helper(lst, [])
-    end
-;
-
-(* TODO: Document and make these better *)
-datatype ERROR = UNEXPECTED_SYMBOL
-               | INVALID_LAMBDA
-               | INVALID_FILE
-               | INCOMPLETE_LAMBDA_FUNCTION
-               | INVALID_PARENTHESES
-               | IMPROPERLY_NESTED_PARENTHESES
-               | INVALID_EMPTY_EXPRESSION
-               | INVALID_EXPRESSION_START
-               | UNEXPECTED_NON_VARIABLE
-               | UNEXPECTED_NON_SEPARATOR
-;
-
-(* TODO: Document and make these better *)
-fun errorString(error) = 
-    let
-        fun helper(UNEXPECTED_SYMBOL) = "Unexpected symbol"
-          | helper(INVALID_LAMBDA) = "Invalid lambda"
-          | helper(INVALID_FILE) = "Invalid file"
-          | helper(UNEXPECTED_NON_VARIABLE) = "Unexpected non-variable symbol"
-          | helper(UNEXPECTED_NON_SEPARATOR) = "Unexpected non-separator symbol"
-          | helper(IMPROPERLY_NESTED_PARENTHESES) = "Improperly nested parentheses"
-          | helper(INCOMPLETE_LAMBDA_FUNCTION) = "Incomplete Lambda function"
-          | helper(INVALID_PARENTHESES) = "Invalid parentheses"
-          | helper(INVALID_EMPTY_EXPRESSION) = "Invalid empty expression"
-          | helper(INVALID_EXPRESSION_START) = "Invalid expression start"
-        ;
-    in
-        errorPrompt^helper(error)
-    end
-;
 
 (* 
  * Returns true if the element 'e' is in the list, false otherwise
@@ -220,7 +170,7 @@ fun indexOfLambdaEnd(s) =
                         in
                             if (i = ~1) then ~1
                             else if (check = []) then ~1
-                            else if (getErrors(check) <> []) then ~1
+                            else if (isIn(errorString, check)) then ~1
                             else i + 3
                         end
                     else if (charIn(hd, variableChars)) then
@@ -253,32 +203,29 @@ and tokenize(s) =
           | helper(hd::[], lst) =
             if (charIn(hd, whitespaceChars)) then lst
             else if (charIn(hd, variableChars)) then lst @ [Char.toString(hd)]
-            else if (hd = sc_openPar) then [errorString(INVALID_PARENTHESES)]
-            else if (hd = sc_lambda) then [errorString(INVALID_LAMBDA)]
-            else if (hd = sc_load) then [errorString(INVALID_FILE)]
-            else [errorString(UNEXPECTED_SYMBOL)]
+            else [errorString]
 
           | helper(hd::md::tl, lst) =
             if (charIn(hd, whitespaceChars)) then helper(md::tl, lst)
             else if (charIn(hd, variableChars)) then
                 if charIn(md, whitespaceChars) orelse (md = sc_openPar) then
                     helper(md::tl, lst @ [Char.toString(hd)])
-                else [errorString(UNEXPECTED_SYMBOL)]
+                else [errorString]
 
             else if (hd = sc_openPar) then
                 let
                     val str = String.implode(hd::md::tl);
                     val i = indexOfClosingPar(str);
                 in
-                    if (i = ~1) then [errorString(IMPROPERLY_NESTED_PARENTHESES)]
+                    if (i = ~1) then [errorString]
                     else
                         let
                             val expr = String.substring(str, 0, i + 1);
                             val rest = String.extract(str, i + 1, NONE);
                             val check = tokenize(String.substring(expr, 1, i - 1));
                         in
-                            if (check = []) then [errorString(INVALID_EMPTY_EXPRESSION)]
-                            else if (getErrors(check) <> []) then getErrors(check)
+                            if (check = []) then [errorString]
+                            else if (isIn(errorString, check)) then [errorString]
                             else helper(String.explode(rest), lst @ [expr])
                         end
                 end
@@ -288,7 +235,7 @@ and tokenize(s) =
                     val str = String.implode(hd::md::tl);
                     val i = indexOfLambdaEnd(str);
                 in
-                    if (i = ~1) then [errorString(INVALID_LAMBDA)]
+                    if (i = ~1) then [errorString]
                     else
                         let
                             val expr = String.substring(str, 0, i + 1);
@@ -314,9 +261,9 @@ and tokenize(s) =
                     TextIO.closeIn(stream);
                     helper(String.explode(input^rest), lst)
                 end
-                handle Io => (print("IOERROR");[errorString(INVALID_FILE)])
+                handle Io => [errorString]
 
-            else [errorString(INVALID_EXPRESSION_START)]
+            else [errorString]
         ;
     in
         helper(String.explode(s), [])
@@ -407,9 +354,7 @@ and reduce(  []  ) = []
             else hd::reduce(tl)
         ;
     in
-        (print(hd^"\n");
         helper(String.explode(hd))
-        )
     end
 ;
 
@@ -468,19 +413,6 @@ fun main() =
             in (
                 (* If there is no result, don't print anything*)
                 if (result = []) then ()
-
-                (* If there are errors, print each on its own line *)
-                else if (getErrors(result) <> []) then (
-                    let
-                        fun helper(  []  ) = ()
-                          | helper(hd::tl) = (print(hd^"\n"); helper(tl))
-                        ;
-                    in
-                        helper(getErrors(result))
-                    end
-                )
-
-                (* Otherwise, print the resulting lambda expression on a single line *)
                 else (
                     print(resultPrompt);
                     print(stringify(result)^"\n")
