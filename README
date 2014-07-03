@@ -57,8 +57,8 @@ Key features
     loaded into the interpreter by prefixing the file name with the "$"
     character. This allows complicated functions to be built incrementally.
 
-    Tail recursion - All recursive functions have been deliberatly written to be
-    tail recursive, allowing ML to perform last-call optimization. TODO************************************
+    Tail recursion - Recursive functions have been deliberatly written to be
+    tail recursive, allowing ML to perform last-call optimization.
 
 
 "files"

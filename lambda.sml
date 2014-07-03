@@ -23,8 +23,9 @@
  *)
 
 (* Prompts*)
-val inputPrompt   = "{L}-: ";
-val resultPrompt  = "    = ";
+val errorPrompt  = " Err: ";
+val inputPrompt  = "{L}-: ";
+val resultPrompt = "    = ";
 
 (* Special characters *)
 val sc_lambda    = #"L";
@@ -33,47 +34,33 @@ val sc_openPar   = #"(";
 val sc_closePar  = #")";
 val sc_load      = #"$";
 
-(* The output resulting from invalid input *)
-val errorString = "Error";
- 
 (* A string containing all valid variable characters *)
 val variableChars = "abcdefghijklmnopqrstuvwxyz";
 
 (* A string containing all valid whitespace characters *)
 val whitespaceChars = " \t\n";
 
-(* Requirement violation exception *)
+(* Requirement violation exception - programmer error *)
 exception REQ_VIOLATION;
 
-(* 
- * Returns true if the element 'e' is in the list, false otherwise
- *
- * REQ: None
- *)
-fun isIn(e,   []  ) = false
-  | isIn(e, hd::tl) =
-    if (e = hd) then true
-    else isIn(e, tl)
-;
+(* Syntax exception - user error *)
+exception INVALID_SYNTAX;
+
+(* Invalid file exception - user error *)
+exception INVALID_FILE;
 
 (* 
  * Returns true if the character 'c' is in the string 's', false otherwise
  *
  * REQ: None
  *)
-fun charIn(c, s) = isIn(c, String.explode(s));
-
-(* 
- * Returns true if any of the character in the string 'a' are in the string 'b'
- *
- * REQ: None
- *)
-fun anyIn(a, b) =
+fun charIn(c, s) =
     let
         fun helper(  []  ) = false
-          | helper(hd::tl) = if charIn(hd, b) then true else helper(tl)
+          | helper(hd::tl) = if (c = hd) then true else helper(tl)
+        ;
     in
-        helper(String.explode(a))
+        helper(String.explode(s))
     end
 ;
 
@@ -97,14 +84,15 @@ fun indexOf(a, b) =
 
 (* 
  * Returns the index of the closing parenthesis corresponding to the opening
- * parenthesis that is at the start of the string 's'. Returns ~1 if no
- * corresponding closing parenthesis is found.
+ * parenthesis that is at the start of the string 's'.
+ *
+ * Raises INVALID_SYNTAX if no closing parenthesis is found.
  *
  * REQ: The first character in the string must be sc_openPar
  *)
 fun indexOfClosingPar(s) =
     let
-        fun helper(  []  , i, n) = ~1
+        fun helper(  []  , i, n) = raise INVALID_SYNTAX
           | helper(hd::tl, i, n) =
             if (hd = sc_closePar) then
                 if (n = 1) then i
@@ -113,7 +101,8 @@ fun indexOfClosingPar(s) =
             else helper(tl, i+1, n)
         ;
     in
-        helper(String.explode(s), 0, 0)
+        if (String.sub(s, 0) <> sc_openPar) then raise REQ_VIOLATION
+        else helper(String.explode(s), 0, 0)
     end
 ;
 
@@ -125,7 +114,7 @@ fun indexOfClosingPar(s) =
  *)
 fun indexOfFileEnd(s) =
     let
-        fun helper(  []  , i) = ~1
+        fun helper(  []  , i) = i
           | helper(hd::tl, i) =
             if (charIn(hd, whitespaceChars)) orelse (hd = sc_openPar) orelse (hd = sc_closePar) then i
             else helper(tl, i + 1)
@@ -139,38 +128,31 @@ fun indexOfFileEnd(s) =
  * If the lambda function at the start of the string 's' is well formed, this
  * function returns the index of the last character of the lambda function.
  *
- * If the lambda function at the start of the string 's' is not well formed,
- * this function returns ~1.
+ * Raises INVALID_SYNTAX if the lambda function at the start of the string 's'
+ * is not well formed,
  *
  * REQ: The first character of 's' must be sc_lambda
  *)
 fun indexOfLambdaEnd(s) =
     let
-        fun helper([],                 i) = raise REQ_VIOLATION
-          | helper(lam::[],            i) = ~1
-          | helper(lam::var::[],       i) = ~1
-          | helper(lam::var::sep::[],  i) = ~1
-          | helper(lam::var::sep::hd::tl, i) =
-                if (lam <> sc_lambda) then raise REQ_VIOLATION
-                else if (not(charIn(var, variableChars))) then ~1
-                else if (sep <> sc_separator) then ~1
+        fun helper([]                   ) = raise REQ_VIOLATION
+          | helper(lam::[]              ) = raise INVALID_SYNTAX
+          | helper(lam::var::[]         ) = raise INVALID_SYNTAX
+          | helper(lam::var::sep::[]    ) = raise INVALID_SYNTAX
+          | helper(lam::var::sep::hd::tl) =
+                if (lam <> sc_lambda)
+                orelse (not(charIn(var, variableChars)))
+                orelse (sep <> sc_separator) then raise INVALID_SYNTAX
                 else
-                    if (hd = sc_lambda) then
-                        let
-                            val i = indexOfLambdaEnd(String.implode(hd::tl));
-                        in
-                            if (i = ~1) then ~1
-                            else i + 3
-                        end
+                    if (hd = sc_lambda) then helper(hd::tl) + 3
                     else if (hd = sc_openPar) then
                         let
                             val str = String.implode(hd::tl);
                             val i = indexOfClosingPar(str);
                         in
-                            if (i = ~1)
-                            (* Check to ensure the contents of the parenthetic expression are valid *)
-                            orelse (isIn(errorString, tokenize(String.substring(str, 1, i - 1)))) then ~1
-                            else i + 3
+                            (* Enforce correctness of the contents *)
+                            tokenize(String.substring(str, 0, i + 1));
+                            i + 3
                         end
                     else if (charIn(hd, variableChars)) then
                         if (tl = []) then 3
@@ -181,87 +163,75 @@ fun indexOfLambdaEnd(s) =
                                 if charIn(md, whitespaceChars)
                                 orelse (md = sc_openPar)
                                 orelse (md = sc_closePar) then 3
-                                else ~1
+                                else raise INVALID_SYNTAX
                             end
-                    else ~1
+                    else raise INVALID_SYNTAX
     in
-        helper(String.explode(s), 0)
+        helper(String.explode(s))
     end
 
 (*
  * Returns a list containing the lambda expressions within the string 's'.
- * If the string contains an invalid lambda expression it returns a list
- * containing a single error message describing the error.
+ *
+ * Raises INVALID_SYNTAX if the string is an invalid lambda
+ * expression.
  *
  * REQ: None
  *)
 and tokenize(s) =
     let
-        fun helper([], lst) = if (lst = []) then [errorString] else lst
+        fun helper([], lst) = if (lst = []) then raise INVALID_SYNTAX
+                              else lst
 
           | helper(hd::[], lst) =
             if (charIn(hd, whitespaceChars)) then helper([], lst)
             else if (charIn(hd, variableChars)) then lst @ [Char.toString(hd)]
-            else [errorString]
+            else raise INVALID_SYNTAX
 
           | helper(hd::md::tl, lst) =
             if (charIn(hd, whitespaceChars)) then helper(md::tl, lst)
             else if (charIn(hd, variableChars)) then
                 if charIn(md, whitespaceChars) orelse (md = sc_openPar) then
                     helper(md::tl, lst @ [Char.toString(hd)])
-                else [errorString]
+                else raise INVALID_SYNTAX
 
             else if (hd = sc_openPar) then
                 let
                     val str = String.implode(hd::md::tl);
                     val i = indexOfClosingPar(str);
+                    val expr = String.substring(str, 0, i + 1);
+                    val rest = String.extract(str, i + 1, NONE);
                 in
-                    if (i = ~1) then [errorString]
-                    else
-                        let
-                            val expr = String.substring(str, 0, i + 1);
-                            val rest = String.extract(str, i + 1, NONE);
-                        in
-                            (* Check to ensure the contents of the parenthetic expression are valid *)
-                            if (isIn(errorString, tokenize(String.substring(expr, 1, i - 1)))) then [errorString]
-                            else helper(String.explode(rest), lst @ [expr])
-                        end
+                    (* Enforce correctness of the contents *)
+                    tokenize(String.substring(expr, 1, String.size(expr) - 2));
+                    helper(String.explode(rest), lst @ [expr])
                 end
 
             else if (hd = sc_lambda) then
                 let
                     val str = String.implode(hd::md::tl);
                     val i = indexOfLambdaEnd(str);
+                    val expr = String.substring(str, 0, i + 1);
+                    val rest = String.extract(str, i + 1, NONE);
                 in
-                    if (i = ~1) then [errorString]
-                    else
-                        let
-                            val expr = String.substring(str, 0, i + 1);
-                            val rest = String.extract(str, i + 1, NONE);
-                        in
-                            helper(String.explode(rest), lst @ [expr])
-                        end
+                    helper(String.explode(rest), lst @ [expr])
                 end
 
             else if (hd = sc_load) then
                 let
                     val str = String.implode(hd::md::tl);
                     val i = indexOfFileEnd(str);
-                    val file =
-                        if (i = ~1) then String.implode(md::tl)
-                        else String.substring(String.implode(hd::md::tl), 1, i - 1);
-                    val rest = 
-                        if (i = ~1) then ""
-                        else String.extract(String.implode(hd::md::tl), i, NONE)
+                    val file = String.substring(String.implode(hd::md::tl), 1, i - 1);
+                    val rest = String.extract(String.implode(hd::md::tl), i, NONE)
                     val stream = TextIO.openIn(file);
                     val input = TextIO.inputAll(stream);
                 in
                     TextIO.closeIn(stream);
                     helper(String.explode(input^rest), lst)
                 end
-                handle Io => [errorString]
+                handle Io => raise INVALID_FILE
 
-            else [errorString]
+            else raise INVALID_SYNTAX
         ;
     in
         helper(String.explode(s), [])
@@ -279,15 +249,15 @@ fun replace( s, "", b) = raise REQ_VIOLATION
   | replace( s,  a, b) =
     let
         val size = String.size(a);
-        fun helper(str) =
+        fun helper(str, acc) =
             if (size <= String.size(str)) then
                 if (a = String.substring(str, 0, size)) then
-                    b^helper(String.extract(str, size, NONE))
-                else String.substring(str, 0, 1)^helper(String.extract(str, 1, NONE))
-            else str
+                    helper(String.extract(str, size, NONE), acc^b)
+                else helper(String.extract(str, 1, NONE), acc^String.substring(str, 0, 1))
+            else acc^str
         ;
     in
-        helper(s)
+        helper(s, "")
     end
 ;
 
@@ -298,12 +268,12 @@ fun replace( s, "", b) = raise REQ_VIOLATION
  *)
 fun replaceFreeVars(s, a, b) =
     let
-        fun helper(out, "") = out
-          | helper(out, str) =
+        fun helper( "", acc) = acc
+          | helper(str, acc) =
             let
                 val i = indexOf(Char.toString(sc_lambda)^a, str);
             in
-                if (i = ~1) then out^replace(str, a, b)
+                if (i = ~1) then acc^replace(str, a, b)
                 else
                     let
                         val e = indexOfLambdaEnd(String.extract(str, i, NONE));
@@ -311,12 +281,12 @@ fun replaceFreeVars(s, a, b) =
                         val bound = String.substring(str, i, e + 1);
                         val rest = String.extract(str, e + i + 1, NONE);
                     in
-                        helper(out^replace(free, a, b)^bound, rest)
+                        helper(rest, acc^replace(free, a, b)^bound)
                     end
             end
         ;
     in
-        helper("", s)
+        helper(s, "")
     end
 ;
 
@@ -339,12 +309,13 @@ fun betaReduce(a,   []  ) = [a]
 (*
  * Returns the list of strings the result after reducing the input list
  *
- * REQ: The elements in the list must be tokenized properly
+ * REQ: The list must be tokenized properly (via the tokenize function)
  *)
+(* TODO: Make this completely tail recursive *)
 and reduce(  []  ) = []
   | reduce(hd::tl) =
     let
-        fun helper(   []   ) = reduce(tl)
+        fun helper(   []   ) = helper(String.explode(List.hd(tl)))
           | helper(chd::ctl) =
             if (chd = sc_lambda) then betaReduce(hd, tl)
             else if (chd = sc_openPar) then
@@ -407,11 +378,17 @@ fun main() =
         else
             let
                 val input = Option.valOf(inputOption);
-            in (
+            in
                 (* If there is no non-whitespace input, don't print a result *)
                 if (trimWhitespace(input) = "") then ()
-                else print(resultPrompt^stringify(reduce(tokenize(input)))^"\n");
-                main()
-            ) end
+                else print(resultPrompt^stringify(reduce(tokenize(input)))^"\n")
+                ; main()
+            end
     end
+    handle error => (
+    case error of
+        INVALID_FILE   => print(errorPrompt^"Invalid file"^"\n")
+      | INVALID_SYNTAX => print(errorPrompt^"Invalid syntax"^"\n")
+      | REQ_VIOLATION  => ()
+    ; main())
 );

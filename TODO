@@ -1,5 +1,3 @@
-1.) Lx.(() is causing a crash
-
 2.) Output the steps of reduction
     (* Whether or not to output the reduction steps *)
     (*val redStepPrompt = "    * ";*)
@@ -17,13 +15,6 @@
 val sc_comment   = #"#"; (* TODO *)
 
 6.) Ensure that the REQ have associated REQ_VIOLATIONs
-
-7.) Refactor so that the index methods actually return 1 passed the last element
-
-Ensure that all documentation is uniform
-
-Optimize and refactor the code - don't do things twice
-AKA thing about the way I'm getting indexes - is there a better way???
 
 Write optimized version in C
 
