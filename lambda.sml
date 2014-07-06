@@ -23,9 +23,10 @@
  *)
 
 (* Prompts*)
-val errorPrompt  = " Err: ";
-val inputPrompt  = "{L}-: ";
-val resultPrompt = "    = ";
+val errorPrompt   = " Err: ";
+val inputPrompt   = "{L}-: ";
+val redStepPrompt = "    * ";
+val resultPrompt  = "    = ";
 
 (* Special characters *)
 val sc_lambda    = #"L";
@@ -33,6 +34,9 @@ val sc_separator = #".";
 val sc_openPar   = #"(";
 val sc_closePar  = #")";
 val sc_load      = #"$";
+
+(* Whether or not to show the steps of the reduction *)
+val showRedSteps = true;
 
 (* A string containing all valid variable characters *)
 val variableChars = "abcdefghijklmnopqrstuvwxyz";
@@ -110,7 +114,7 @@ fun indexOfClosingPar(s) =
  * Returns the index of the last character in the file name at the start of the
  * string 's'.
  *
- * REQ: The first character in the string must be sc_openPar
+ * REQ: None
  *)
 fun indexOfFileEnd(s) =
     let
@@ -291,43 +295,6 @@ fun replaceFreeVars(s, a, b) =
 ;
 
 (*
- * Returns the list of strings that result from beta reducing 'hd' into the the
- * lambda function given by 'a'
- *
- * REQ: The string 'a' must be a valid lambda expression
- *)
-fun betaReduce(a,   []  ) = [a]
-  | betaReduce(a, hd::tl) =
-    let
-        val body = String.extract(a, 3, NONE);
-        val var = Char.toString(String.sub(a, 1));
-        val newBody = replaceFreeVars(body, var, hd);
-    in
-        reduce(tokenize(newBody) @ tl)
-    end
-
-(*
- * Returns the list of strings the result after reducing the input list
- *
- * REQ: The list must be tokenized properly (via the tokenize function)
- *)
-(* TODO: Make this completely tail recursive *)
-and reduce(  []  ) = []
-  | reduce(hd::tl) =
-    let
-        fun helper(   []   ) = helper(String.explode(List.hd(tl)))
-          | helper(chd::ctl) =
-            if (chd = sc_lambda) then betaReduce(hd, tl)
-            else if (chd = sc_openPar) then
-                reduce(tokenize(String.implode(List.take(ctl, List.length(ctl)-1))) @ tl)
-            else hd::reduce(tl)
-        ;
-    in
-        helper(String.explode(hd))
-    end
-;
-
-(*
  * Returns the string resulting from trimming all whitespace from the
  * beginning and end of the string 's'
  *
@@ -365,11 +332,58 @@ fun stringify([]) = ""
     end
 ;
 
+(*
+ * Returns the list of strings that result from beta reducing 'hd' into the the
+ * lambda function given by 'a'
+ *
+ * REQ: The string 'a' must be a valid lambda function
+ *)
+fun betaReduce(a,   []  ) = [a]
+  | betaReduce(a, hd::tl) =
+    let
+        val body = String.extract(a, 3, NONE);
+        val var = Char.toString(String.sub(a, 1));
+        val newBody = replaceFreeVars(body, var, hd);
+    in
+        [newBody] @ tl
+    end
+
+(*
+ * Returns the list of strings the result after reducing the input list, 'lst'
+ *
+ * REQ: The list must be tokenized properly (via the tokenize function)
+ *)
+and reduce(lst) = 
+    let
+        fun helper(  []  , acc) = acc
+          | helper(hd::tl, acc) =
+            if (hd = "") then raise REQ_VIOLATION
+            else
+                let
+                    val chd::ctl = String.explode(hd);
+                in
+                    if (chd = sc_lambda) then
+                        if (tl = []) then acc @ [hd]
+                        else (
+                            if (showRedSteps) then print(redStepPrompt^stringify(acc @ hd::tl)^"\n") else ();
+                            helper(betaReduce(hd, tl), acc)
+                        )
+                    else if (chd = sc_openPar) then ( (* strip the parenthesis and reduce *)
+                        if (showRedSteps) then print(redStepPrompt^stringify(acc @ hd::tl)^"\n") else ();
+                        helper(tokenize(String.implode(List.take(ctl, List.length(ctl)-1))) @ tl, acc)
+                    )
+                    else helper(tl, acc @ [hd])
+                end
+        ;
+    in
+        helper(lst, [])    
+    end
+;
+
 (* Main loop for the interpreter *)
 fun main() =
 (
     print(inputPrompt);
-
     let
         val inputOption = TextIO.inputLine(TextIO.stdIn);
     in
@@ -389,6 +403,9 @@ fun main() =
     case error of
         INVALID_FILE   => print(errorPrompt^"Invalid file"^"\n")
       | INVALID_SYNTAX => print(errorPrompt^"Invalid syntax"^"\n")
-      | REQ_VIOLATION  => ()
+      | REQ_VIOLATION  => print("    * Congratulations! You have found a bug in the "^
+                                "interpreter.\n    * Please send an email to "^
+                                "mward4@buffalo.edu containing the input\n    * "^
+                                "that caused this output - it is greatly appreciated!\n")
     ; main())
 );

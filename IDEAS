@@ -1,0 +1,4 @@
+- Perform Eta reductions
+- Allow for comments in the input
+- Figure out how to stop infinite recursion
+- Allow for strings of variables (names) instead of just single variables
