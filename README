@@ -20,7 +20,7 @@ From Wikipedia:
     the lambda calculus in expressiveness). The name derives from the Greek
     letter lambda (λ) used to denote binding a variable in a function.
 
-From "A Tutorial Introduction to the Lambda Calculus" by Ra ́l Rojas
+From "A Tutorial Introduction to the Lambda Calculus" by Raul Rojas
 
     The set of lambda expressions, Λ, can be defined inductively:
         1.) If x is a variable, then x ∈  Λ
@@ -163,7 +163,7 @@ characters:
           of a parenthetically enclosed lambda expression.
 
     "$" - sc_load, the load character. It marks the beginning of the name of
-          a file whose contents should be read into the interpreter.
+          a file whose contents should be loaded into the interpreter.
 
 You can easily change these default values, should you so desire.
 

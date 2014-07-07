@@ -1,5 +1,0 @@
-a b
-$T a b $F a b
-$P ($S ($S $0)) a b
-($AND($T)($T)) a b
-Lx.(b) a
