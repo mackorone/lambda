@@ -25,7 +25,7 @@
 (* Prompts*)
 val errorPrompt   = " Err: ";
 val inputPrompt   = "{L}-: ";
-val redStepPrompt = "    * ";
+val redStepPrompt = "    - ";
 val resultPrompt  = "    = ";
 
 (* Special characters *)

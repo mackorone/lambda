@@ -129,11 +129,12 @@ And here are some examples of invalid lambda expressions:
     Lx          - every lambda function must have a separator and a body
     Lx.         - every function must have a body
     Lx.()       - every lambda function must have a non-empty body
-    Lxy.x       - every lambda function must be a function of exactly one variable
+    Lxy.x       - every lambda function must be a function of exactly one
+                  variable
     Lx.xx       - variables must be delimited by whitespace or parentheses
     Lx.(xx)     - variables must be delimited by whitespace or parentheses
-    Lx.xLy.y    - all lambda expressions (functions, variables, applications) must
-                  be delimited by whitespace or parentheses
+    Lx.xLy.y    - all lambda expressions (functions, variables, applications)
+                  must be delimited by whitespace or parentheses
 
 
 Variable characters
