@@ -83,9 +83,9 @@ allowing ML to perform last-call optimization.
 
 Step-by-step reduction output
 -----------------------------
-Setting the boolean field "showRedSteps" ("show reduction steps") to true
-enables the interpreter to print out the steps of the reduction as each
-reduction takes place.
+Setting the boolean field "showRedSteps" (show reduction steps) to true enables
+the interpreter to print out the steps of the reduction as each reduction takes
+place.
 
 
 Syntax
@@ -142,7 +142,8 @@ Variable characters
 
 A valid variable is any character in the string "abcdefghijklmnopqrstuvwxyz".
 Note that neighboring variable characters are not allowed by the syntax of the
-language. Thus, an expression of the form Lx.xa should be written as Lx.(x a).
+language. Thus, an expression of the form "Lx.xa" should be written as
+"Lx.(x a)".
 
 
 Special characters
@@ -151,19 +152,19 @@ Special characters
 By default, the interpreter interprets the following characters as special
 characters:
 
-    "L" - sc_lambda, the lambda character. It marks the beginning of lambda
+    'L' - sc_lambda, the lambda character. It marks the beginning of lambda
           functions.
 
-    "." - sc_separator, the separator character. It separates function variables
+    '.' - sc_separator, the separator character. It separates function variables
           from function bodies.
 
-    "(" - sc_openPar, the opening parenthesis character. It marks the beginning
+    '(' - sc_openPar, the opening parenthesis character. It marks the beginning
           of a parenthetically enclosed lambda expression.
 
-    ")" - sc_closePar, the closeing parenthesis character. It marks the ending
+    ')' - sc_closePar, the closeing parenthesis character. It marks the ending
           of a parenthetically enclosed lambda expression.
 
-    "$" - sc_load, the load character. It marks the beginning of the name of
+    '$' - sc_load, the load character. It marks the beginning of the name of
           a file whose contents should be loaded into the interpreter.
 
 You can easily change these default values, should you so desire.
