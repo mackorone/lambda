@@ -167,7 +167,8 @@ characters:
     '$' - sc_load, the load character. It marks the beginning of the name of
           a file whose contents should be loaded into the interpreter.
 
-You can easily change these default values, should you so desire.
+You can easily change these default values, should you so desire. Note that if
+these are non-unique, things won't work as expected.
 
 
 Files and loading
